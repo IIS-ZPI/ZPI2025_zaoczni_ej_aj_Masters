@@ -5,6 +5,6 @@ public class Main {
         System.out.println("ej-aj_Masters \n" +
 				"Developer \tMarkdeBrunner\n" +
 				"\t246339" +
-        "\tmic-cza\n");
+        		"\tmic-cza\n");
     }
 }
