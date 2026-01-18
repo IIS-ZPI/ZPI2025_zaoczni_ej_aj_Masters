@@ -1,0 +1,49 @@
+name: Tag on merge to release
+
+on:
+  pull_request:
+    branches:
+      - release
+    types:
+      - closed
+
+
+jobs:
+  tag-on-merge:
+    if: github.event.pull_request.merged == true
+    runs-on: uubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Git User Config
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Generate tag
+        id: version
+        run: |
+          LAST_TAG=$(git tag --list "v2.*" --sort=-v:refname | head -n 1)
+          if [ -z "$LAST_TAG" ]; then
+            NEXT_TAG="v2.0.0"
+          else
+            BASE=${LAST_TAG#v}
+            MAJOR=$(echo "$BASE" | cut -d. -f1)
+            MINOR=$(echo "$BASE" | cut -d. -f2)
+            PATCH=$(echo "$BASE" | cut -d. -f3)
+            PATCH=$((PATCH + 1))
+            NEXT_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          fi
+          echo "next_tag=$NEXT_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Apply tag
+        run: |
+          git tag "${{ steps.version.outputs.next_tag }}" "${GITHUB_SHA}"
+          git push origin "${{ steps.version.outputs.next_tag }}"
